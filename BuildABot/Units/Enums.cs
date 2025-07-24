@@ -100,6 +100,9 @@ namespace Units
     /// </summary>
     public enum AbilityId
     {
+        // Basic unit commands
+        Move = 16,
+
         // Training abilities
         Train_SCV = 524,
         Train_Marine = 560,
