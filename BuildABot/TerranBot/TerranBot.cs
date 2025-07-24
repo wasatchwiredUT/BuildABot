@@ -15,7 +15,9 @@ namespace TerranBot
             _botController = new BotController();
         }
         public void OnStart(ResponseGameInfo gameInfo, ResponseData data, ResponsePing pingResponse, ResponseObservation observation, uint playerId, string opponentID)
-        { }
+        {
+            _botController.OnStart(gameInfo,data,pingResponse,observation,playerId,opponentID);      
+        }
     
         public IEnumerable<Action> OnFrame(ResponseObservation observation)
         {
