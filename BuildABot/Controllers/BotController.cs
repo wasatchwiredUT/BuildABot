@@ -5,7 +5,7 @@ using Ancestors;
 using Action = SC2APIProtocol.Action;
 using Managers;
 
-namespace BotController
+namespace Controllers
 {
     /// <summary>
     /// High‑level bot controller implementing the SC2API_CSharp.Bot interface.  This
@@ -16,12 +16,18 @@ namespace BotController
     /// </summary>
     public class BotController : Bot
     {
-        private ProductionManager _production;
-        private WallManager? _wallManager;
+
+
+        private readonly ProductionManager _production = new ProductionManager();
+     
+
         private readonly List<Unit> _ourUnits = new List<Unit>();
 
         // Empty constructor
-        public BotController() { }
+        public BotController()
+        {
+           
+        }
 
         /// <summary>
         /// Called once at the beginning of the game.  We do not need to do
@@ -29,8 +35,7 @@ namespace BotController
         /// </summary>
         public void OnStart(ResponseGameInfo gameInfo, ResponseData data, ResponsePing pingResponse, ResponseObservation observation, uint playerId, string opponentID)
         {
-            _wallManager = new WallManager(gameInfo);
-            _wallManager.Initialize(observation);
+
         }
 
         /// <summary>
@@ -56,7 +61,9 @@ namespace BotController
                 }
             }
             // Update production manager with latest units
-            _production = new ProductionManager(_ourUnits);
+            _production.SetPlayerUnits(_ourUnits);
+
+          
 
             if (_wallManager != null)
             {
