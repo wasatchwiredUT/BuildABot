@@ -19,6 +19,11 @@ namespace Intel
 
         public int EstimatedEnemyBases { get; set; } = 1;
 
+
+        public  EnemyIntel()
+        {
+            InitializeBuildingUnitMapping();
+        }
         public void UpdateEnemyRace(Race race)
         {
             if (EnemyRace == Race.Random && race != Race.Random)

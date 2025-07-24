@@ -5,6 +5,7 @@ using Ancestors;
 using Action = SC2APIProtocol.Action;
 using Managers;
 using Tasks;
+using Intel;
 
 namespace Controllers
 {
@@ -25,6 +26,7 @@ namespace Controllers
         private readonly List<Unit> _ourUnits = new List<Unit>();
 
         private ScvScoutTask _scvScout;
+        private EnemyIntel _enemyIntel = new EnemyIntel();
 
         // Empty constructor
         public BotController()
