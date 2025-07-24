@@ -4,6 +4,7 @@ using Units;
 using Ancestors;
 using Action = SC2APIProtocol.Action;
 using Managers;
+using Tasks;
 
 namespace Controllers
 {
@@ -19,9 +20,11 @@ namespace Controllers
 
 
         private readonly ProductionManager _production = new ProductionManager();
-        private WallManager _wallManager;
+     
 
         private readonly List<Unit> _ourUnits = new List<Unit>();
+
+        private ScvScoutTask _scvScout;
 
         // Empty constructor
         public BotController()
@@ -35,8 +38,7 @@ namespace Controllers
         /// </summary>
         public void OnStart(ResponseGameInfo gameInfo, ResponseData data, ResponsePing pingResponse, ResponseObservation observation, uint playerId, string opponentID)
         {
-            _wallManager = new WallManager(gameInfo);
-            _wallManager.Initialize(observation);
+
         }
 
         /// <summary>
@@ -69,6 +71,11 @@ namespace Controllers
             if (_wallManager != null)
             {
                 actions.AddRange(_wallManager.MaintainWall(observation, _ourUnits));
+            }
+
+            if (_scvScout != null)
+            {
+                actions.AddRange(_scvScout.OnFrame(observation, _ourUnits));
             }
 
             // Insert high level bot logic here.  For example:
