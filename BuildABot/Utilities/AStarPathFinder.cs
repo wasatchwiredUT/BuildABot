@@ -35,15 +35,21 @@ namespace Utilities
 
         private bool IsWalkable(int x, int y)
         {
+            // Discard coordinates that are outside the recorded width/height.
             if (x < 0 || y < 0 || x >= _width || y >= _height)
             {
                 return false;
             }
-            // In the SC2 API the pathing grid is encoded as bytes where
-            // 0 denotes unpathable and non‑zero denotes pathable:contentReference[oaicite:0]{index=0}.
             int index = x + y * _width;
+            // Guard against a mismatch between width*height and _pathData.Length.
+            if (index < 0 || index >= _pathData.Length)
+            {
+                return false;
+            }
+            // In SC2, 0 means unwalkable; any non‑zero value (often 255) is walkable.
             return _pathData[index] != 0;
         }
+
 
         private static float Heuristic(int x1, int y1, int x2, int y2)
         {

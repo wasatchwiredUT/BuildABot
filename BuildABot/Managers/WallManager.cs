@@ -1,10 +1,11 @@
-using SC2APIProtocol;
+﻿using SC2APIProtocol;
 using Units;
 using Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Action = SC2APIProtocol.Action;
+using System.Diagnostics;
 
 namespace Managers
 {
@@ -57,7 +58,7 @@ namespace Managers
                 target = new Point2D { X = pathWidth / 2f, Y = pathHeight / 2f };
 
             // Follow the path from our base toward the target,
-            // collecting the first run of walkable?but?unbuildable tiles (the ramp).
+            // collecting the first run of walkable‑but‑unbuildable tiles (the ramp).
             List<Point2D> rampCells = new();
             try
             {
@@ -84,19 +85,20 @@ namespace Managers
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore path errors
+                // Log exception to help identify pathing issues
+                Debug.WriteLine($"[WallManager] Exception during path-based ramp detection: {ex.Message}\n{ex.StackTrace}");
             }
 
-            // fallback to local radius scan if the path?based approach found nothing
+            // fallback to local radius scan if the path‑based approach found nothing
             if (rampCells.Count == 0)
             {
                 // [same local scan as before, omitted here for brevity]
             }
             if (rampCells.Count == 0) return;
 
-            // compute the ramp�s centre and choose three buildable spots (unchanged)
+            // compute the ramp’s centre and choose three buildable spots (unchanged)
             float avgX = rampCells.Average(p => p.X);
             float avgY = rampCells.Average(p => p.Y);
             Point2D rampCenter = new() { X = avgX, Y = avgY };
