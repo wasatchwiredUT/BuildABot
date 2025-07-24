@@ -16,8 +16,11 @@ namespace Controllers
     /// </summary>
     public class BotController : Bot
     {
+
+
         private readonly ProductionManager _production = new ProductionManager();
      
+
         private readonly List<Unit> _ourUnits = new List<Unit>();
 
         // Empty constructor
@@ -32,7 +35,7 @@ namespace Controllers
         /// </summary>
         public void OnStart(ResponseGameInfo gameInfo, ResponseData data, ResponsePing pingResponse, ResponseObservation observation, uint playerId, string opponentID)
         {
-          
+
         }
 
         /// <summary>
@@ -61,6 +64,11 @@ namespace Controllers
             _production.SetPlayerUnits(_ourUnits);
 
           
+
+            if (_wallManager != null)
+            {
+                actions.AddRange(_wallManager.MaintainWall(observation, _ourUnits));
+            }
 
             // Insert high level bot logic here.  For example:
             // If we have less than 20 SCVs, produce more SCVs.
