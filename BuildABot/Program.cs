@@ -20,7 +20,7 @@ namespace BuildABot
          * This will start the Stacraft 2 instance and connect to it.
          * The program can run in single player mode against the standard Blizzard AI, or it can be run against other bots through the ladder.
          */
-        public static void Run(string[] args)
+        public static void Main(string[] args)
         {
             if (args.Length == 0)
                 new GameConnection().RunSinglePlayer(bot, mapName, race, opponentRace, opponentDifficulty).Wait();
