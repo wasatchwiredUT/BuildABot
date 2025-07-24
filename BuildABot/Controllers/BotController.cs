@@ -5,7 +5,7 @@ using Ancestors;
 using Action = SC2APIProtocol.Action;
 using Managers;
 
-namespace BotController
+namespace Controllers
 {
     /// <summary>
     /// High‑level bot controller implementing the SC2API_CSharp.Bot interface.  This

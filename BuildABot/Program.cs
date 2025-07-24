@@ -12,7 +12,7 @@ namespace BuildABot
         private static Race race = Race.Terran;
 
         // Settings for single player mode.
-        private static string mapName = @"InterloperLE.SC2Map";
+       
         private static Race opponentRace = Race.Random;
         private static Difficulty opponentDifficulty = Difficulty.VeryEasy;
 
@@ -22,8 +22,20 @@ namespace BuildABot
          */
         public static void Main(string[] args)
         {
+
+            var mapFolder = @"C:\Program Files (x86)\StarCraft II\Maps"; // Your maps folder
+
+            var mapFiles = Directory.GetFiles(mapFolder, "*.SC2Map");
+            if (mapFiles.Length == 0)
+            {
+                Console.WriteLine($"No .SC2Map files found in '{mapFolder}'.");
+                return;
+            }
+            var random = new Random();
+            var randomMap = mapFiles[random.Next(mapFiles.Length)];
+
             if (args.Length == 0)
-                new GameConnection().RunSinglePlayer(bot, mapName, race, opponentRace, opponentDifficulty).Wait();
+                new GameConnection().RunSinglePlayer(bot, randomMap, race, opponentRace, opponentDifficulty).Wait();
             else
                 new GameConnection().RunLadder(bot, race, args).Wait();
         }
