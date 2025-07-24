@@ -17,6 +17,7 @@ namespace BotController
     public class BotController : Bot
     {
         private ProductionManager _production;
+        private WallManager? _wallManager;
         private readonly List<Unit> _ourUnits = new List<Unit>();
 
         // Empty constructor
@@ -28,7 +29,8 @@ namespace BotController
         /// </summary>
         public void OnStart(ResponseGameInfo gameInfo, ResponseData data, ResponsePing pingResponse, ResponseObservation observation, uint playerId, string opponentID)
         {
-            // Nothing to initialize yet
+            _wallManager = new WallManager(gameInfo);
+            _wallManager.Initialize(observation);
         }
 
         /// <summary>
@@ -55,6 +57,11 @@ namespace BotController
             }
             // Update production manager with latest units
             _production = new ProductionManager(_ourUnits);
+
+            if (_wallManager != null)
+            {
+                actions.AddRange(_wallManager.MaintainWall(observation, _ourUnits));
+            }
 
             // Insert high level bot logic here.  For example:
             // If we have less than 20 SCVs, produce more SCVs.
