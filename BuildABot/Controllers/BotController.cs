@@ -16,7 +16,7 @@ namespace Controllers
     /// </summary>
     public class BotController : Bot
     {
-        private ProductionManager _production;
+        private readonly ProductionManager _production = new ProductionManager();
         private WallManager? _wallManager;
         private readonly List<Unit> _ourUnits = new List<Unit>();
 
@@ -56,7 +56,7 @@ namespace Controllers
                 }
             }
             // Update production manager with latest units
-            _production = new ProductionManager(_ourUnits);
+            _production.SetPlayerUnits(_ourUnits);
 
             if (_wallManager != null)
             {

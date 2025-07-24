@@ -14,9 +14,23 @@ namespace Managers
     /// </summary>
     public class ProductionManager
     {
-        private readonly List<Unit> _playerUnits;
+        private List<Unit> _playerUnits;
+
+        public ProductionManager()
+        {
+            _playerUnits = new List<Unit>();
+        }
 
         public ProductionManager(List<Unit> playerUnits)
+        {
+            _playerUnits = playerUnits;
+        }
+
+        /// <summary>
+        /// Updates the list of player units used for production decisions.
+        /// </summary>
+        /// <param name="playerUnits">The latest list of our units.</param>
+        public void SetPlayerUnits(List<Unit> playerUnits)
         {
             _playerUnits = playerUnits;
         }
