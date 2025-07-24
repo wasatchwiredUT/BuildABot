@@ -2,18 +2,17 @@
 using SC2APIProtocol;
 using Ancestors;
 using TerranBot;
-using BotController;
 
 namespace BuildABot
 {
     public class Program
     {
         // Settings for your bot.
-        private static Bot bot = new BotController.BotController();
+        private static Bot bot = new TheTerranBot();
         private static Race race = Race.Terran;
 
         // Settings for single player mode.
-       
+
         private static Race opponentRace = Race.Random;
         private static Difficulty opponentDifficulty = Difficulty.VeryEasy;
 
