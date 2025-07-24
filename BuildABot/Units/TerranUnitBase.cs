@@ -80,5 +80,13 @@ namespace Units
         {
             return IssueCommand(abilityId, null);
         }
+
+        /// <summary>
+        /// Orders the unit to move toward the specified position.
+        /// </summary>
+        public Action Move(Point2D target)
+        {
+            return IssueCommand(AbilityId.Move, target);
+        }
     }
 }
