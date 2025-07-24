@@ -19,14 +19,14 @@ namespace Controllers
 
 
         private readonly ProductionManager _production = new ProductionManager();
-     
+        private WallManager _wallManager;
 
         private readonly List<Unit> _ourUnits = new List<Unit>();
 
         // Empty constructor
         public BotController()
         {
-           
+          
         }
 
         /// <summary>
@@ -35,7 +35,8 @@ namespace Controllers
         /// </summary>
         public void OnStart(ResponseGameInfo gameInfo, ResponseData data, ResponsePing pingResponse, ResponseObservation observation, uint playerId, string opponentID)
         {
-
+            _wallManager = new WallManager(gameInfo);
+            _wallManager.Initialize(observation);
         }
 
         /// <summary>
