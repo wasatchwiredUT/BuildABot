@@ -58,7 +58,7 @@ namespace Managers
                     int placeIndex = x + y * placeWidth;
                     int pathIndex = x + y * pathWidth;
                     if (pathIndex >= 0 && pathIndex < pathData.Length && placeIndex >= 0 && placeIndex < placeData.Length &&
-                        pathData[pathIndex] == 255 && placeData[placeIndex] == 0)
+                        pathData[pathIndex] == 0 && placeData[placeIndex] == 0)
                     {
                         rampCells.Add(new Point2D { X = x + 0.5f, Y = y + 0.5f });
                     }
@@ -117,7 +117,7 @@ namespace Managers
                         if (px < 0 || py < 0 || px >= width || py >= height)
                             continue;
                         int idx = px + py * width;
-                        if (placement[idx] == 255)
+                        if (placement[idx] == 1)
                             return new Point2D { X = px + 0.5f, Y = py + 0.5f };
                     }
                 }
@@ -132,11 +132,11 @@ namespace Managers
             return (float)Math.Sqrt(dx * dx + dy * dy);
         }
 
-        private SCV GetIdleScv(List<Unit> units)
+        private SCV FindBuilder(List<Unit> units)
         {
             foreach (var unit in units)
             {
-                if ((UnitType)unit.UnitType == UnitType.SCV && (unit.Orders == null || unit.Orders.Count == 0))
+                if ((UnitType)unit.UnitType == UnitType.SCV)
                     return new SCV(unit);
             }
             return null;
@@ -168,7 +168,7 @@ namespace Managers
                 }
                 if (!hasStructure && minerals >= 100)
                 {
-                    SCV scv = GetIdleScv(ourUnits);
+                    SCV scv = FindBuilder(ourUnits); // Changed from GetIdleScv
                     if (scv != null)
                     {
                         actions.Add(scv.BuildStructure(UnitType.SupplyDepot, pos));
