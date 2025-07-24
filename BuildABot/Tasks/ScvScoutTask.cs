@@ -6,8 +6,7 @@ using Action = SC2APIProtocol.Action;
 namespace Tasks
 {
     /// <summary>
-    /// Simple task to send an SCV to scout the enemy base at game start.
-    /// As the scout moves, its positions are recorded for basic pathing data.
+    /// SCV scout that endlessly circles the enemy base, avoiding blocked waypoints.
     /// </summary>
     public class ScvScoutTask
     {
@@ -63,14 +62,35 @@ namespace Tasks
             return enemy;
         }
 
-        private void SetupWaypoints(Point2D enemy)
+        private void SetupWaypoints(Point2D center, ResponseObservation obs, float radius = 10f, int segments = 64)
         {
-            _waypoints.Enqueue(enemy);
-            float r = 5f;
-            _waypoints.Enqueue(new Point2D { X = enemy.X + r, Y = enemy.Y });
-            _waypoints.Enqueue(new Point2D { X = enemy.X, Y = enemy.Y + r });
-            _waypoints.Enqueue(new Point2D { X = enemy.X - r, Y = enemy.Y });
-            _waypoints.Enqueue(new Point2D { X = enemy.X, Y = enemy.Y - r });
+            _waypoints.Clear();
+            var enemyUnits = obs.Observation.RawData.Units;
+
+            for (int i = 0; i < segments; i++)
+            {
+                float angle = 2 * System.MathF.PI * i / segments;
+                float x = center.X + radius * System.MathF.Cos(angle);
+                float y = center.Y + radius * System.MathF.Sin(angle);
+                var point = new Point2D { X = x, Y = y };
+
+                // Avoid enemy structures
+                bool blocked = false;
+                foreach (var enemy in enemyUnits)
+                {
+                    if (enemy.Alliance != Alliance.Enemy) continue;
+                    if ((UnitType)enemy.UnitType == UnitType.SCV) continue;
+
+                    if (Distance(enemy.Pos, point) < 1.5f)
+                    {
+                        blocked = true;
+                        break;
+                    }
+                }
+
+                if (!blocked)
+                    _waypoints.Enqueue(point);
+            }
         }
 
         public List<Action> OnFrame(ResponseObservation obs, List<Unit> ourUnits)
@@ -84,7 +104,7 @@ namespace Tasks
                 _initialized = true;
                 Point2D our = FindOurStart(obs);
                 Point2D enemy = GetEnemyStart(our);
-                SetupWaypoints(enemy);
+                SetupWaypoints(enemy, obs);
             }
 
             if (_scvTag == 0)
@@ -113,18 +133,21 @@ namespace Tasks
 
             _path.Add(new Point2D { X = scvUnit.Pos.X, Y = scvUnit.Pos.Y });
             SCV scv = new SCV(scvUnit);
+
             if (_waypoints.Count > 0)
             {
                 Point2D target = _waypoints.Peek();
-                if (Distance(scvUnit.Pos, target) < 1.0f)
+                // Skip if close or idle (stuck)
+                if (Distance(scvUnit.Pos, target) < 1.0f || scvUnit.Orders.Count == 0)
                 {
                     _waypoints.Dequeue();
-                    if (_waypoints.Count == 0)
-                        return actions;
+                    _waypoints.Enqueue(target);
                     target = _waypoints.Peek();
                 }
+
                 actions.Add(scv.Move(target));
             }
+
             return actions;
         }
     }
