@@ -23,8 +23,8 @@ namespace BuildABot
         public static void Main(string[] args)
         {
 
-            var mapFolder = @"C:\Program Files (x86)\StarCraft II\Maps"; // Your maps folder
-
+            //var mapFolder = @"C:\Program Files (x86)\StarCraft II\Maps"; // Your maps folder
+            var mapFolder = @"F:\StarCraft II\Maps";
             var mapFiles = Directory.GetFiles(mapFolder, "*.SC2Map");
             if (mapFiles.Length == 0)
             {

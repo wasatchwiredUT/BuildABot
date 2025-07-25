@@ -1,11 +1,13 @@
 
-using SC2APIProtocol;
-using Units;
 using Ancestors;
-using Action = SC2APIProtocol.Action;
-using Managers;
-using Tasks;
+using BuildABot.Services;
 using Intel;
+using Managers;
+using Pathing;
+using SC2APIProtocol;
+using Tasks;
+using Units;
+using Action = SC2APIProtocol.Action;
 
 namespace Controllers
 {
@@ -28,6 +30,10 @@ namespace Controllers
         private ScvScoutTask _scvScout;
         private EnemyIntel _enemyIntel = new EnemyIntel();
 
+        private MapAnalysisService MapAnalysisService;
+        private DebugService _debugService;
+
+        private SCVMovementTest _scvTest;
         // Empty constructor
         public BotController()
         {
@@ -40,10 +46,17 @@ namespace Controllers
         /// </summary>
         public void OnStart(ResponseGameInfo gameInfo, ResponseData data, ResponsePing pingResponse, ResponseObservation observation, uint playerId, string opponentID)
         {
-            _wallManager = new WallManager(gameInfo);
+            MapAnalysisService = new MapAnalysisService(gameInfo);
+            MapAnalysisService.Analyze();
+            _wallManager = new WallManager(gameInfo,MapAnalysisService);
             _wallManager.Initialize(observation);
-            _scvScout = new ScvScoutTask();
-            _scvScout.OnStart(gameInfo);
+            //_scvScout = new ScvScoutTask();
+            _debugService = new DebugService();
+
+          //  _scvTest = new SCVMovementTest();
+          //  _scvTest.SetTargetPosition(139.5f, 40.5f); // Use your wall position
+
+          //  _scvScout.OnStart(gameInfo);
         }
 
         /// <summary>
@@ -75,12 +88,17 @@ namespace Controllers
 
             if (_scvScout != null)
             {
-                actions.AddRange(_scvScout.OnFrame(observation, _ourUnits));
+               // actions.AddRange(_scvScout.OnFrame(observation, _ourUnits));
             }
+
+            if (_scvTest != null)
+                {
+                //actions.AddRange(_scvTest.RunTest(observation, _ourUnits));
+                }
 
             if (_wallManager != null)
             {
-                _wallManager.UpdateFromScoutPath(_scvScout?.Path);
+                // Maintain the wall if it exists
                 actions.AddRange(_wallManager.MaintainWall(observation, _ourUnits));
             }
 
