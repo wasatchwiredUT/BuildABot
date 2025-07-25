@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using SC2APIProtocol;
 
@@ -12,7 +12,7 @@ namespace Utilities
     /// perform any caching.  It should be instantiated once and
     /// reused if possible.
     /// </summary>
-    public class AStarPathfinder
+    public class AStarPathfinder : IPathFinder
     {
         private readonly byte[] _pathData;
         private readonly int _width;
@@ -104,11 +104,14 @@ namespace Utilities
 
             if (!TryGetNearestWalkable(sx, sy, 5, out var startTile))
             {
-                return result;
+
             }
             if (!TryGetNearestWalkable(ex, ey, 5, out var endTile))
             {
-                return result;
+                if (!TryGetNearestWalkable(ex, ey, 15, out endTile))
+                {
+                    return result;
+                }
             }
 
             var openSet = new PriorityQueue<Node, float>();

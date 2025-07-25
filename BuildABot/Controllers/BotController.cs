@@ -73,14 +73,15 @@ namespace Controllers
 
           
 
-            if (_wallManager != null)
-            {
-                actions.AddRange(_wallManager.MaintainWall(observation, _ourUnits));
-            }
-
             if (_scvScout != null)
             {
                 actions.AddRange(_scvScout.OnFrame(observation, _ourUnits));
+            }
+
+            if (_wallManager != null)
+            {
+                _wallManager.UpdateFromScoutPath(_scvScout?.Path);
+                actions.AddRange(_wallManager.MaintainWall(observation, _ourUnits));
             }
 
             // Insert high level bot logic here.  For example:
