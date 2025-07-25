@@ -46,8 +46,38 @@ namespace Utilities
             {
                 return false;
             }
-            // In SC2, 0 means unwalkable; any non‑zero value (often 255) is walkable.
+            // In SC2, 0 means unwalkable; any non-zero value (often 255) is walkable.
             return _pathData[index] != 0;
+        }
+
+        private bool TryGetNearestWalkable(int x, int y, int searchRadius, out (int, int) result)
+        {
+            if (IsWalkable(x, y))
+            {
+                result = (x, y);
+                return true;
+            }
+
+            for (int r = 1; r <= searchRadius; r++)
+            {
+                for (int dx = -r; dx <= r; dx++)
+                {
+                    for (int dy = -r; dy <= r; dy++)
+                    {
+                        if (Math.Abs(dx) != r && Math.Abs(dy) != r) continue; // only check ring
+                        int nx = x + dx;
+                        int ny = y + dy;
+                        if (IsWalkable(nx, ny))
+                        {
+                            result = (nx, ny);
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            result = default;
+            return false;
         }
 
 
@@ -72,8 +102,11 @@ namespace Utilities
             int ex = (int)Math.Round(end.X);
             int ey = (int)Math.Round(end.Y);
 
-            // ensure both start and end are walkable
-            if (!IsWalkable(sx, sy) || !IsWalkable(ex, ey))
+            if (!TryGetNearestWalkable(sx, sy, 5, out var startTile))
+            {
+                return result;
+            }
+            if (!TryGetNearestWalkable(ex, ey, 5, out var endTile))
             {
                 return result;
             }
@@ -82,12 +115,12 @@ namespace Utilities
             var cameFrom = new Dictionary<(int, int), (int, int)>();
             var gScore = new Dictionary<(int, int), float>();
 
-            var startPos = (sx, sy);
-            var endPos = (ex, ey);
+            var startPos = startTile;
+            var endPos = endTile;
 
             // initialize the start node
             gScore[startPos] = 0;
-            openSet.Enqueue(new Node(sx, sy), Heuristic(sx, sy, ex, ey));
+            openSet.Enqueue(new Node(startPos.Item1, startPos.Item2), Heuristic(startPos.Item1, startPos.Item2, endPos.Item1, endPos.Item2));
 
             // neighbour movement (4 cardinal + 4 diagonal)
             int[][] directions = new[]
@@ -144,7 +177,7 @@ namespace Utilities
                         // found a better path to neighbour
                         cameFrom[neighbor] = current;
                         gScore[neighbor] = tentativeG;
-                        float fScore = tentativeG + Heuristic(nx, ny, ex, ey);
+                    float fScore = tentativeG + Heuristic(nx, ny, endPos.Item1, endPos.Item2);
                         openSet.Enqueue(new Node(nx, ny), fScore);
                     }
                 }
