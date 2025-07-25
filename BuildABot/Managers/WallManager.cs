@@ -20,15 +20,7 @@ namespace Managers
         private readonly ResponseGameInfo _gameInfo;
         private readonly List<Point2D> _wallPositions = new();
         private bool _initialized;
-        private bool _scoutUsed;
-        private IPathFinder _pathFinder;
-        private MapDataService _mapDataService;
-        private BuildingService _buildingService;
-        private ChokePointService _chokePointService;
-        private Point2D _startLoc;
-        private byte[] _placementData;
-        private int _placeWidth;
-        private int _placeHeight;
+
         public WallManager(ResponseGameInfo gameInfo)
         {
             _gameInfo = gameInfo;
@@ -53,7 +45,7 @@ namespace Managers
             _placeWidth = placement.Size.X;
             _placeHeight = placement.Size.Y;
             int pathWidth = pathing.Size.X, pathHeight = pathing.Size.Y;
-            _placementData = placement.Data.ToByteArray();
+
 
             // Pick a distant target (another start location or map centre)
             Point2D target = null;
@@ -72,9 +64,7 @@ namespace Managers
             List<Point2D> rampCells = new();
             try
             {
-                // allow a larger search distance to improve ramp detection on
-                // wide maps
-                var choke = _chokePointService.FindDefensiveChokePoint(_startLoc, target, 0, 60f);
+
                 if (choke != null)
                 {
                     rampCells = _chokePointService.GetEntireChokePoint(choke);
@@ -90,15 +80,13 @@ namespace Managers
             {
                 try
                 {
-                    var pathPoints = _pathFinder.FindPath(_startLoc, target);
+
                     bool collecting = false;
                     foreach (var pt in pathPoints)
                     {
                         int x = (int)Math.Floor(pt.X);
                         int y = (int)Math.Floor(pt.Y);
-                        int placeIndex = x + y * _placeWidth;
-                        bool walkable = _mapDataService.PathWalkable(x, y);
-                        bool unbuildable = _placementData[placeIndex] == 0;
+
 
                         if (walkable && unbuildable)
                         {

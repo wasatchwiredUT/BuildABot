@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using SC2APIProtocol;
 
@@ -104,12 +104,7 @@ namespace Utilities
 
             if (!TryGetNearestWalkable(sx, sy, 5, out var startTile))
             {
-                // expand search radius in case the unit is surrounded by
-                // unwalkable tiles such as structures.
-                if (!TryGetNearestWalkable(sx, sy, 15, out startTile))
-                {
-                    return result;
-                }
+
             }
             if (!TryGetNearestWalkable(ex, ey, 5, out var endTile))
             {
