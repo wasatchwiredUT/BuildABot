@@ -67,7 +67,9 @@ namespace Managers
             List<Point2D> rampCells = new();
             try
             {
-                var choke = _chokePointService.FindDefensiveChokePoint(startLoc, target, 0);
+                // allow a larger search distance to improve ramp detection on
+                // wide maps
+                var choke = _chokePointService.FindDefensiveChokePoint(startLoc, target, 0, 60f);
                 if (choke != null)
                 {
                     rampCells = _chokePointService.GetEntireChokePoint(choke);

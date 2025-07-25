@@ -104,11 +104,19 @@ namespace Utilities
 
             if (!TryGetNearestWalkable(sx, sy, 5, out var startTile))
             {
-                return result;
+                // expand search radius in case the unit is surrounded by
+                // unwalkable tiles such as structures.
+                if (!TryGetNearestWalkable(sx, sy, 15, out startTile))
+                {
+                    return result;
+                }
             }
             if (!TryGetNearestWalkable(ex, ey, 5, out var endTile))
             {
-                return result;
+                if (!TryGetNearestWalkable(ex, ey, 15, out endTile))
+                {
+                    return result;
+                }
             }
 
             var openSet = new PriorityQueue<Node, float>();
