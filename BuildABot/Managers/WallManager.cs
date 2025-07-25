@@ -1,6 +1,7 @@
 ﻿using SC2APIProtocol;
 using Units;
 using Utilities;
+using Pathing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,11 +20,17 @@ namespace Managers
         private readonly ResponseGameInfo _gameInfo;
         private readonly List<Point2D> _wallPositions = new();
         private bool _initialized;
-        private AStarPathfinder _pathFinder; 
+        private AStarPathfinder _pathFinder;
+        private MapDataService _mapDataService;
+        private BuildingService _buildingService;
+        private ChokePointService _chokePointService;
         public WallManager(ResponseGameInfo gameInfo)
         {
             _gameInfo = gameInfo;
             _pathFinder = new AStarPathfinder(_gameInfo);
+            _mapDataService = new MapDataService(_gameInfo);
+            _buildingService = new BuildingService(_mapDataService);
+            _chokePointService = new ChokePointService(_pathFinder, _mapDataService, _buildingService);
         }
 
         /// <summary>
@@ -42,7 +49,6 @@ namespace Managers
             int placeWidth = placement.Size.X, placeHeight = placement.Size.Y;
             int pathWidth = pathing.Size.X, pathHeight = pathing.Size.Y;
             byte[] placeData = placement.Data.ToByteArray();
-            byte[] pathData = pathing.Data.ToByteArray();
 
             // Pick a distant target (another start location or map centre)
             Point2D target = null;
@@ -57,45 +63,53 @@ namespace Managers
             if (target == null)
                 target = new Point2D { X = pathWidth / 2f, Y = pathHeight / 2f };
 
-            // Follow the path from our base toward the target,
-            // collecting the first run of walkable‑but‑unbuildable tiles (the ramp).
+            // Use choke point service to locate the ramp between our base and the target
             List<Point2D> rampCells = new();
             try
             {
-                var pathPoints = _pathFinder.FindPath(startLoc, target);
-                bool collecting = false;
-                foreach (var pt in pathPoints)
+                var choke = _chokePointService.FindDefensiveChokePoint(startLoc, target, 0);
+                if (choke != null)
                 {
-                    int x = (int)Math.Floor(pt.X);
-                    int y = (int)Math.Floor(pt.Y);
-                    int pathIndex = x + y * pathWidth;
-                    int placeIndex = x + y * placeWidth;
-                    bool walkable = pathData[pathIndex] != 0;
-                    bool unbuildable = placeData[placeIndex] == 0;
-
-                    if (walkable && unbuildable)
-                    {
-                        collecting = true;
-                        rampCells.Add(new Point2D { X = x + 0.5f, Y = y + 0.5f });
-                    }
-                    else if (collecting)
-                    {
-                        // once we leave the ramp, stop
-                        break;
-                    }
+                    rampCells = _chokePointService.GetEntireChokePoint(choke);
                 }
             }
             catch (Exception ex)
             {
-                // Log exception to help identify pathing issues
-                Debug.WriteLine($"[WallManager] Exception during path-based ramp detection: {ex.Message}\n{ex.StackTrace}");
+                Debug.WriteLine($"[WallManager] Exception during choke point detection: {ex.Message}\n{ex.StackTrace}");
             }
 
-            // fallback to local radius scan if the path‑based approach found nothing
+            // fallback to simple scan if the chokepoint method found nothing
             if (rampCells.Count == 0)
             {
-                // [same local scan as before, omitted here for brevity]
+                try
+                {
+                    var pathPoints = _pathFinder.FindPath(startLoc, target);
+                    bool collecting = false;
+                    foreach (var pt in pathPoints)
+                    {
+                        int x = (int)Math.Floor(pt.X);
+                        int y = (int)Math.Floor(pt.Y);
+                        int placeIndex = x + y * placeWidth;
+                        bool walkable = _mapDataService.PathWalkable(x, y);
+                        bool unbuildable = placeData[placeIndex] == 0;
+
+                        if (walkable && unbuildable)
+                        {
+                            collecting = true;
+                            rampCells.Add(new Point2D { X = x + 0.5f, Y = y + 0.5f });
+                        }
+                        else if (collecting)
+                        {
+                            break;
+                        }
+                    }
+                }
+                catch (Exception ex2)
+                {
+                    Debug.WriteLine($"[WallManager] Exception during fallback ramp detection: {ex2.Message}\n{ex2.StackTrace}");
+                }
             }
+
             if (rampCells.Count == 0) return;
 
             // compute the ramp’s centre and choose three buildable spots (unchanged)
