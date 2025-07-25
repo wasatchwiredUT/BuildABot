@@ -12,7 +12,7 @@ namespace Utilities
     /// perform any caching.  It should be instantiated once and
     /// reused if possible.
     /// </summary>
-    public class AStarPathfinder
+    public class AStarPathfinder : IPathFinder
     {
         private readonly byte[] _pathData;
         private readonly int _width;

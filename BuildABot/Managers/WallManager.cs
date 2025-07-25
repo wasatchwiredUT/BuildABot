@@ -21,7 +21,7 @@ namespace Managers
         private readonly List<Point2D> _wallPositions = new();
         private bool _initialized;
         private bool _scoutUsed;
-        private AStarPathfinder _pathFinder;
+        private IPathFinder _pathFinder;
         private MapDataService _mapDataService;
         private BuildingService _buildingService;
         private ChokePointService _chokePointService;

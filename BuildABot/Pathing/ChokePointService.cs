@@ -1,16 +1,17 @@
 using SC2APIProtocol;
 using System.Collections.Generic;
 using System.Linq;
+using Utilities;
 
 namespace Pathing
 {
     public class ChokePointService
     {
-        private readonly Utilities.AStarPathfinder _pathFinder;
+        private readonly Utilities.IPathFinder _pathFinder;
         private readonly MapDataService _mapDataService;
         private readonly BuildingService _buildingService;
 
-        public ChokePointService(Utilities.AStarPathfinder pathFinder, MapDataService mapDataService, BuildingService buildingService)
+        public ChokePointService(Utilities.IPathFinder pathFinder, MapDataService mapDataService, BuildingService buildingService)
         {
             _pathFinder = pathFinder;
             _mapDataService = mapDataService;
