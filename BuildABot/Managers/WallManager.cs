@@ -532,6 +532,7 @@ namespace Managers
 
             // Only consider ramps that are reasonably close to our main base (within 20 units)
             var nearbyRamps = _mapAnalysis.Ramps
+                .Select(r => new Point2D { X = r.X, Y = r.Y })
                 .Where(ramp => Math.Sqrt(DistanceSquared(_startLoc, ramp)) < 20f)
                 .ToList();
 
