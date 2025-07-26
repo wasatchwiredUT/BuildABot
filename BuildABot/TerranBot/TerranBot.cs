@@ -28,6 +28,11 @@ namespace TerranBot
         
         public void OnEnd(ResponseObservation observation, Result result)
         { }
-      
+
+        public Request GetDebugRequest()
+        {
+            return _botController.GetDebugRequest();
+        }
+
     }
 }
