@@ -229,11 +229,11 @@ namespace Controllers
 
             foreach (var ramp in MapAnalysisService.Ramps)
                 {
-                // Draw red circle at each ramp location using the ramp's height
-                _debugService.DrawSphere(new Point { X = ramp.X, Y = ramp.Y, Z = ramp.Z }, 3.0f, redColor);
+                // Draw red circle at each ramp location
+                _debugService.DrawSphere(new Point { X = ramp.X, Y = ramp.Y, Z = 8.0f }, 3.0f, redColor);
 
-                // Optional: Add text label slightly above the ramp top
-                var point = new Point { X = ramp.X, Y = ramp.Y, Z = ramp.Z + 2.0f };
+                // Optional: Add text label
+                var point = new Point { X = ramp.X, Y = ramp.Y, Z = 10.0f };
                 _debugService.DrawText("RAMP", point, redColor, 12);
                 }
             }
