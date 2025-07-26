@@ -12,6 +12,53 @@ using Action = SC2APIProtocol.Action;
 namespace Controllers
 {
 
+    public class SimpleDebugService
+        {
+        public Request DrawRequest
+            {
+            get; private set;
+            }
+
+        public void ResetDrawRequest()
+            {
+            DrawRequest = new Request();
+            DrawRequest.Debug = new RequestDebug();
+            DebugCommand debugCommand = new DebugCommand();
+            debugCommand.Draw = new DebugDraw();
+            DrawRequest.Debug.Debug.Add(debugCommand);
+            }
+
+        public void DrawCircle(Point2D pos, float radius, Color color)
+            {
+            var point = new Point { X = pos.X, Y = pos.Y, Z = 8.0f };
+            DrawRequest.Debug.Debug[0].Draw.Spheres.Add(new DebugSphere()
+                {
+                Color = color,
+                R = radius,
+                P = point
+                });
+            }
+        public void DrawSphere(Point point, float radius = 2, Color color = null)
+            {
+             DrawRequest.Debug.Debug[0].Draw.Spheres.Add(new DebugSphere()
+                {
+                Color = color,
+                R = radius,
+                P = point
+                });
+            }
+        public void DrawText(string text, Point pos, Color color, uint size = 12)
+            {
+            DrawRequest.Debug.Debug[0].Draw.Text.Add(new DebugText()
+                {
+                Size = size,
+                Color = color,
+                Text = text,
+                WorldPos = pos
+                });
+            }
+
+        }
     /// <summary>
     /// High‑level bot controller implementing the SC2API_CSharp.Bot interface.  This
     /// class exposes natural language style methods for training units and
@@ -19,9 +66,10 @@ namespace Controllers
     /// units and delegates production to a ProductionManager.  The OnFrame
     /// method is responsible for keeping these lists up to date each frame.
     /// </summary>
-    public class BotController : Bot, IDebugProvider
+    public class BotController : Bot
     {
-        private readonly DebugService _debugService = new DebugService();
+
+        SimpleDebugService debugService = new SimpleDebugService();
         private readonly ProductionManager _production = new ProductionManager();
         private WallManager _wallManager;
 
@@ -31,6 +79,7 @@ namespace Controllers
         private EnemyIntel _enemyIntel = new EnemyIntel();
 
         private MapAnalysisService MapAnalysisService;
+        private DebugService _debugService;
 
         private SCVMovementTest _scvTest;
         // Empty constructor
@@ -55,7 +104,8 @@ namespace Controllers
            
             _wallManager = new WallManager(gameInfo,MapAnalysisService);
             _wallManager.Initialize(observation);
-            _scvScout = new ScvScoutTask();
+             _scvScout = new ScvScoutTask();
+            _debugService = new DebugService();
 
           //  _scvTest = new SCVMovementTest();
           //  _scvTest.SetTargetPosition(139.5f, 40.5f); // Use your wall position
@@ -72,8 +122,8 @@ namespace Controllers
         {
             List<Action> actions = new List<Action>();
 
-            // Clear previous frame's debug commands
-            _debugService.NewFrame();
+            // Reset debug drawing each frame
+            debugService.ResetDrawRequest();
 
             // Mark all detected ramps on the map
             MarkRampsOnMap();
@@ -112,6 +162,13 @@ namespace Controllers
                 actions.AddRange(_wallManager.MaintainWall(observation, _ourUnits));
             }
 
+            // Add debug drawing request to actions (this sends the visual markers to SC2)
+            if (debugService.DrawRequest.Debug?.Debug?.Count > 0)
+                {
+                // Convert debug request to action (you may need to adjust this based on your SC2 client wrapper)
+                // This is the key part that actually sends the visual markers to StarCraft II
+                yield return new Action { Debug = debugService.DrawRequest.Debug };
+                }
 
             // Insert high level bot logic here.  For example:
             // If we have less than 20 SCVs, produce more SCVs.
@@ -128,6 +185,13 @@ namespace Controllers
                 List<Action> scvActions = _production.CreateUnit(UnitType.SCV, 1);
                 actions.AddRange(scvActions);
             }
+
+            // Important: Reset debug drawing each frame if using visual debugging
+            if (debugService != null)
+                {
+                debugService.ResetDrawRequest();
+                }
+
 
             // Return all actions including debug drawing
             foreach (var action in actions)
@@ -225,23 +289,13 @@ namespace Controllers
             foreach (var ramp in MapAnalysisService.Ramps)
                 {
                 // Draw red circle at each ramp location
-                var rampPoint = new Point { X = ramp.X, Y = ramp.Y, Z = 8.0f };
-                _debugService.DrawSphere(rampPoint, 3.0f, redColor);
+                debugService.DrawCircle(ramp, 3.0f, redColor);
 
-                // Optional: Add text label above the ramp
-                var textPoint = new Point { X = ramp.X, Y = ramp.Y, Z = 10.0f };
-                _debugService.DrawText("RAMP", textPoint, redColor, 12);
+                // Optional: Add text label
+                var point = new Point { X = ramp.X, Y = ramp.Y, Z = 10.0f };
+                debugService.DrawText("RAMP", point, redColor, 12);
                 }
             }
         }
-
-        /// <summary>
-        /// Provide the debug request for the current frame.
-        /// </summary>
-        public Request? GetDebugRequest()
-            {
-            return _debugService.CreateDebugRequest();
-            }
-    }
 
 }
