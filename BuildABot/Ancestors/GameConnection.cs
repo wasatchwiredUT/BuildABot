@@ -214,6 +214,14 @@ namespace Ancestors
                 if (actionRequest.Action.Actions.Count > 0)
                     await proxy.SendRequest(actionRequest);
 
+                // Send debug drawing commands if the bot provides them
+                if (bot is IDebugProvider debugProvider)
+                    {
+                    Request? debugRequest = debugProvider.GetDebugRequest();
+                    if (debugRequest != null)
+                        await proxy.SendRequest(debugRequest);
+                    }
+
                 Request stepRequest = new Request();
                 stepRequest.Step = new RequestStep();
                 stepRequest.Step.Count = 1;
