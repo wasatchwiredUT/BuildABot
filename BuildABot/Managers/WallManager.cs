@@ -116,7 +116,7 @@ namespace Managers
                 Debug.WriteLine($"[WallManager] Found {_mapAnalysis.Ramps.Count} ramps total");
 
                 // Show detailed view of each ramp
-                DrawRampDetails();
+               // DrawRampDetails();
 
                 // Draw area around our main base to see terrain
                // int baseX = (int)_startLoc.X;
@@ -373,7 +373,7 @@ namespace Managers
         /// <summary>
         /// Draw a detailed view around each detected ramp.
         /// </summary>
-        private void DrawRampDetails()
+        /*private void DrawRampDetails()
             {
             if (_mapAnalysis?.Ramps == null || !_mapAnalysis.Ramps.Any())
                 {
@@ -428,66 +428,9 @@ namespace Managers
                     Debug.WriteLine(line);
                     }
                 }
-            }
+            }*/
 
-        /// <summary>
-        /// Draw a larger map view showing ramps and terrain.
-        /// </summary>
-     /*  private void DrawMapToConsole(int startX, int startY, int mapwidth, int mapheight)
-            {
-            var heightMap = _gameInfo.StartRaw.TerrainHeight;
-            var pathingGrid = _gameInfo.StartRaw.PathingGrid;
-            int mapWidth = heightMap.Size.X;
-            int mapHeight = heightMap.Size.Y;
-
-            // Clamp the view to map bounds
-            int endX = Math.Min(startX + mapwidth, mapWidth);
-            int endY = Math.Min(startY + mapheight, mapHeight);
-
-            Debug.WriteLine($"Map view from ({startX},{startY}) to ({endX},{endY}):");
-            Debug.WriteLine("Legend: # = blocked, R = ramp, B = base, numbers = height/10");
-
-            for (int y = startY; y < endY; y++)
-                {
-                string line = "";
-                for (int x = startX; x < endX; x++)
-                    {
-                    // Check if this is our base location
-                    if (_startLoc != null && Math.Abs(x - _startLoc.X) <= 1 && Math.Abs(y - _startLoc.Y) <= 1)
-                        {
-                        line += "B";
-                        }
-                    // Check if this position is a detected ramp
-                    else if (_mapAnalysis?.Ramps?.Any(r => Math.Abs(r.X - x) < 2 && Math.Abs(r.Y - y) < 2) == true)
-                        {
-                        line += "R";
-                        }
-                    else if (IsPathable(x, y))
-                        {
-                        int heightb = GetTerrainHeight(x, y);
-                        int heightDigit = (heightb / 10) % 10; // Show height as single digit
-                        line += heightDigit.ToString();
-                        }
-                    else
-                        {
-                        line += "#";
-                        }
-                    }
-                Debug.WriteLine($"{line} {y}");
-                }
-
-            // Show X coordinates
-            string xCoords = " ";
-            for (int x = startX; x < endX; x++)
-                {
-                xCoords += (x % 10).ToString();
-                }
-            Debug.WriteLine(xCoords);
-            }
-
-        /// <summary>
-        /// Helper to check if a position is pathable.
-        /// </summary>*/
+     
         private bool IsPathable(int x, int y)
             {
             var pathingGrid = _gameInfo.StartRaw.PathingGrid;
