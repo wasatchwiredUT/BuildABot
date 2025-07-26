@@ -24,7 +24,7 @@ namespace Pathing
             {
             get; private set;
             }
-        public List<Point2D> Ramps
+        public List<Point> Ramps
             {
             get; private set;
             }
@@ -34,7 +34,7 @@ namespace Pathing
             _gameInfo = gameInfo;
             ExpansionLocations = new List<Point2D>();
             ChokePoints = new List<Point2D>();
-            Ramps = new List<Point2D>();
+            Ramps = new List<Point>();
             }
 
         /// <summary>
@@ -106,10 +106,16 @@ namespace Pathing
 
                 if (IsValidRamp(cluster, width, heightMap.Data))
                     {
-                    var rampCenter = new Point2D { X = (float)centerX, Y = (float)centerY };
-                    Ramps.Add(rampCenter);
+                    // Determine the highest point in the cluster (top of the ramp)
+                    var topCell = cluster
+                        .Select(p => new { Cell = p, Height = GetHeight((int)p.X, (int)p.Y, width, heightMap.Data) })
+                        .OrderByDescending(h => h.Height)
+                        .First();
+
+                    var rampTop = new Point { X = topCell.Cell.X, Y = topCell.Cell.Y, Z = topCell.Height };
+                    Ramps.Add(rampTop);
                     validatedCount++;
-                    Debug.WriteLine($"[MapAnalysis] ✓ Valid ramp {validatedCount} at ({rampCenter.X:F1}, {rampCenter.Y:F1}) with {cluster.Count} cells");
+                    Debug.WriteLine($"[MapAnalysis] ✓ Valid ramp {validatedCount} at ({rampTop.X:F1}, {rampTop.Y:F1}, h={rampTop.Z}) with {cluster.Count} cells");
                     }
                 else
                     {
@@ -378,6 +384,7 @@ namespace Pathing
         public Point2D FindNearestRamp(Point2D position, float maxDistance = float.MaxValue)
             {
             return Ramps
+                .Select(r => new Point2D { X = r.X, Y = r.Y })
                 .Where(ramp => {
                     var distance = System.Math.Sqrt(
                         System.Math.Pow(ramp.X - position.X, 2) +
