@@ -51,7 +51,7 @@ namespace Pathing
 
         /// <summary>
         /// Analyzes terrain to find ramps using walkable-but-not-buildable detection.
-        /// Based on professional ramp detection algorithms.
+        /// Enhanced with detailed diagnostics to debug main base ramp detection.
         /// </summary>
         private void AnalyzeChokePointsAndRamps()
             {
@@ -61,7 +61,7 @@ namespace Pathing
             int width = heightMap.Size.X;
             int height = heightMap.Size.Y;
 
-            Debug.WriteLine($"[MapAnalysis] Analyzing {width}x{height} terrain for professional ramp detection");
+            Debug.WriteLine($"[MapAnalysis] Analyzing {width}x{height} terrain for ramp detection");
 
             // Step 1: Find all potential ramp cells (walkable but not buildable)
             var potentialRampCells = new List<Point2D>();
@@ -83,26 +83,51 @@ namespace Pathing
 
             Debug.WriteLine($"[MapAnalysis] Found {potentialRampCells.Count} potential ramp cells");
 
+            // Let's see if there are any potential ramp cells near main bases
+            foreach (var startLoc in _gameInfo.StartRaw.StartLocations)
+                {
+                var nearbyRampCells = potentialRampCells.Where(cell =>
+                    System.Math.Abs(cell.X - startLoc.X) < 25 && System.Math.Abs(cell.Y - startLoc.Y) < 25).ToList();
+                Debug.WriteLine($"[MapAnalysis] Near start location ({startLoc.X:F1}, {startLoc.Y:F1}): {nearbyRampCells.Count} potential ramp cells");
+                }
+
             // Step 2: Cluster nearby ramp cells into ramp groups
             var rampClusters = ClusterRampCells(potentialRampCells);
             Debug.WriteLine($"[MapAnalysis] Clustered into {rampClusters.Count} ramp groups");
 
-            // Step 3: Validate clusters as real ramps
+            // Step 3: Validate clusters as real ramps with detailed logging
+            int validatedCount = 0;
+            int rejectedCount = 0;
+
             foreach (var cluster in rampClusters)
                 {
+                var centerX = cluster.Average(p => p.X);
+                var centerY = cluster.Average(p => p.Y);
+
                 if (IsValidRamp(cluster, width, heightMap.Data))
                     {
-                    // Add the center of the ramp cluster
-                    var centerX = cluster.Average(p => p.X);
-                    var centerY = cluster.Average(p => p.Y);
                     var rampCenter = new Point2D { X = (float)centerX, Y = (float)centerY };
-
                     Ramps.Add(rampCenter);
-                    Debug.WriteLine($"Valid ramp found at ({rampCenter.X:F1}, {rampCenter.Y:F1}) with {cluster.Count} cells");
+                    validatedCount++;
+                    Debug.WriteLine($"[MapAnalysis] ✓ Valid ramp {validatedCount} at ({rampCenter.X:F1}, {rampCenter.Y:F1}) with {cluster.Count} cells");
+                    }
+                else
+                    {
+                    rejectedCount++;
+                    Debug.WriteLine($"[MapAnalysis] ✗ Rejected cluster {rejectedCount} at ({centerX:F1}, {centerY:F1}) with {cluster.Count} cells");
+
+                    // Show why it was rejected
+                    var heights = cluster.Select(p => GetHeight((int)p.X, (int)p.Y, width, heightMap.Data)).ToList();
+                    var uniqueHeights = heights.Distinct().Count();
+                    var minHeight = heights.Min();
+                    var maxHeight = heights.Max();
+                    var heightDiff = maxHeight - minHeight;
+
+                    Debug.WriteLine($"    Rejection details: {cluster.Count} cells, {uniqueHeights} unique heights, {heightDiff} height diff");
                     }
                 }
 
-            // Simple choke point detection (keep existing)
+            // Simple choke point detection
             for (int x = 2; x < width - 2; x++)
                 {
                 for (int y = 2; y < height - 2; y++)
@@ -117,7 +142,7 @@ namespace Pathing
                     }
                 }
 
-            Debug.WriteLine($"[MapAnalysis] Found {Ramps.Count} validated ramps and {ChokePoints.Count} choke points");
+            Debug.WriteLine($"[MapAnalysis] Final result: {Ramps.Count} validated ramps, {rejectedCount} rejected clusters, {ChokePoints.Count} choke points");
             }
 
         /// <summary>
@@ -179,6 +204,10 @@ namespace Pathing
                     {
                     clusters.Add(cluster);
                     }
+                else if (cluster.Count > 0)
+                    {
+                    Debug.WriteLine($"[MapAnalysis] Discarded small cluster of {cluster.Count} cells at ({cluster[0].X:F1}, {cluster[0].Y:F1})");
+                    }
                 }
 
             return clusters;
@@ -186,43 +215,63 @@ namespace Pathing
 
         /// <summary>
         /// Validate that a cluster of cells represents a real ramp.
-        /// Based on height variation and progressive slope characteristics.
+        /// Relaxed criteria to catch real ramps that were being rejected.
         /// </summary>
         private bool IsValidRamp(List<Point2D> cluster, int width, Google.Protobuf.ByteString heightData)
             {
             if (cluster.Count < 4)
-                return false; // Too small
+                {
+                Debug.WriteLine($"    ✗ Too small: {cluster.Count} < 4 cells");
+                return false;
+                }
 
             // Get all heights in the cluster
             var heights = cluster.Select(p => GetHeight((int)p.X, (int)p.Y, width, heightData)).ToList();
             var uniqueHeights = heights.Distinct().Count();
 
-            // Ramps should have multiple height levels (progressive slope)
-            if (uniqueHeights < 3)
-                return false;
-
             var minHeight = heights.Min();
             var maxHeight = heights.Max();
             var heightDifference = maxHeight - minHeight;
 
-            // Ramps should have significant height variation
-            // Based on your data showing differences like 16, 32, 64, 79
-            if (heightDifference < 16)
+            // Much more lenient criteria based on actual data
+            // Ramps can have even small height differences
+            if (heightDifference < 8)
+                {
+                Debug.WriteLine($"    ✗ Height difference too small: {heightDifference} < 8");
                 return false;
+                }
             if (heightDifference > 100)
-                return false; // Probably a cliff, not a ramp
-
-            // Check for progressive height transition (not just two levels)
-            var sortedHeights = heights.OrderBy(h => h).ToList();
-            var middleHeights = sortedHeights.Skip(sortedHeights.Count / 4).Take(sortedHeights.Count / 2);
-
-            // Should have intermediate heights between min and max
-            var hasProgressiveSlope = middleHeights.Any(h => h > minHeight + heightDifference * 0.2 && h < maxHeight - heightDifference * 0.2);
-
-            if (!hasProgressiveSlope)
+                {
+                Debug.WriteLine($"    ✗ Height difference too large: {heightDifference} > 100 (cliff?)");
                 return false;
+                }
 
-            Debug.WriteLine($"Ramp validation: {cluster.Count} cells, {uniqueHeights} heights, {heightDifference} height diff");
+            // For small height differences, allow fewer unique heights
+            int requiredHeights = heightDifference >= 16 ? 3 : 2;
+            if (uniqueHeights < requiredHeights)
+                {
+                Debug.WriteLine($"    ✗ Not enough height levels: {uniqueHeights} < {requiredHeights} (for height diff {heightDifference})");
+                return false;
+                }
+
+            // For small height differences, skip the progressive slope check
+            if (heightDifference >= 16)
+                {
+                // Check for progressive height transition (not just two levels)
+                var sortedHeights = heights.OrderBy(h => h).ToList();
+                var middleHeights = sortedHeights.Skip(sortedHeights.Count / 4).Take(sortedHeights.Count / 2);
+
+                // Should have intermediate heights between min and max
+                var hasProgressiveSlope = middleHeights.Any(h => h > minHeight + heightDifference * 0.2 && h < maxHeight - heightDifference * 0.2);
+
+                if (!hasProgressiveSlope)
+                    {
+                    Debug.WriteLine($"    ✗ No progressive slope: heights {minHeight}-{maxHeight}");
+                    return false;
+                    }
+                }
+
+            Debug.WriteLine($"    ✓ Valid: {cluster.Count} cells, {uniqueHeights} heights, {heightDifference} height diff");
             return true;
             }
 

@@ -119,18 +119,18 @@ namespace Managers
                 DrawRampDetails();
 
                 // Draw area around our main base to see terrain
-                int baseX = (int)_startLoc.X;
-                int baseY = (int)_startLoc.Y;
-                Debug.WriteLine($"[WallManager] Terrain around main base:");
-                DrawMapToConsole(baseX - 15, baseY - 15, 30, 30);
+               // int baseX = (int)_startLoc.X;
+               // int baseY = (int)_startLoc.Y;
+                //Debug.WriteLine($"[WallManager] Terrain around main base:");
+               // DrawMapToConsole(baseX - 15, baseY - 15, 30, 30);
                 }
             else
                 {
                 Debug.WriteLine("[WallManager] No ramps detected by MapAnalysisService!");
                 // Still draw the area to see what terrain looks like
-                int baseX = (int)_startLoc.X;
-                int baseY = (int)_startLoc.Y;
-                DrawMapToConsole(baseX - 10, baseY - 10, 20, 20);
+              //  int baseX = (int)_startLoc.X;
+               // int baseY = (int)_startLoc.Y;
+                //DrawMapToConsole(baseX - 10, baseY - 10, 20, 20);
                 }
 
             // Find the best ramp for walling
@@ -433,7 +433,7 @@ namespace Managers
         /// <summary>
         /// Draw a larger map view showing ramps and terrain.
         /// </summary>
-        private void DrawMapToConsole(int startX, int startY, int mapwidth, int mapheight)
+     /*  private void DrawMapToConsole(int startX, int startY, int mapwidth, int mapheight)
             {
             var heightMap = _gameInfo.StartRaw.TerrainHeight;
             var pathingGrid = _gameInfo.StartRaw.PathingGrid;
@@ -487,7 +487,7 @@ namespace Managers
 
         /// <summary>
         /// Helper to check if a position is pathable.
-        /// </summary>
+        /// </summary>*/
         private bool IsPathable(int x, int y)
             {
             var pathingGrid = _gameInfo.StartRaw.PathingGrid;
@@ -515,7 +515,7 @@ namespace Managers
 
             return heightMap.Data[y * width + x];
             }
-
+     
         /// <summary>
         /// Find the best ramp for creating a wall.
         /// </summary>
@@ -586,12 +586,14 @@ namespace Managers
 
         /// <summary>
         /// Check if a position is buildable using the placement grid.
+        /// Fixed bit manipulation to match StarCraft II's placement grid format.
         /// </summary>
         private bool IsBuildable(int x, int y)
             {
             if (x < 0 || y < 0 || x >= _placeWidth || y >= _placeHeight)
                 return false;
 
+            // StarCraft II uses bit-packed data: each bit represents one cell
             int cellIndex = y * _placeWidth + x;
             int byteIndex = cellIndex / 8;
             int bitIndex = cellIndex % 8;
@@ -599,7 +601,8 @@ namespace Managers
             if (byteIndex >= _placementData.Length)
                 return false;
 
-            return (_placementData[byteIndex] & (1 << (7 - bitIndex))) != 0;
+            // Extract the bit - StarCraft II uses LSB ordering
+            return (_placementData[byteIndex] & (1 << bitIndex)) != 0;
             }
 
         /// <summary>
@@ -610,6 +613,8 @@ namespace Managers
             int ix = (int)Math.Round(x);
             int iy = (int)Math.Round(y);
             int maxRadius = 8;
+
+            Debug.WriteLine($"[WallManager] Searching for buildable near ({x:F1}, {y:F1}) -> grid ({ix}, {iy})");
 
             for (int r = 0; r <= maxRadius; r++)
                 {
@@ -622,12 +627,28 @@ namespace Managers
 
                         if (IsBuildable(px, py))
                             {
-                            return new Point2D { X = px + 0.5f, Y = py + 0.5f };
+                            var result = new Point2D { X = px + 0.5f, Y = py + 0.5f };
+                            Debug.WriteLine($"[WallManager] Found buildable at ({result.X:F1}, {result.Y:F1}) - verifying...");
+
+                            // Double-check by testing a 2x2 area (supply depot size)
+                            bool canBuildSupplyDepot = IsBuildable(px, py) && IsBuildable(px + 1, py) &&
+                                                      IsBuildable(px, py + 1) && IsBuildable(px + 1, py + 1);
+
+                            if (canBuildSupplyDepot)
+                                {
+                                Debug.WriteLine($"[WallManager] ✓ Confirmed 2x2 buildable area at ({result.X:F1}, {result.Y:F1})");
+                                return result;
+                                }
+                            else
+                                {
+                                Debug.WriteLine($"[WallManager] ✗ 2x2 area not fully buildable at ({result.X:F1}, {result.Y:F1})");
+                                }
                             }
                         }
                     }
                 }
 
+            Debug.WriteLine($"[WallManager] No buildable position found near ({x:F1}, {y:F1})");
             return null;
             }
 
